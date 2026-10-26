@@ -1,6 +1,77 @@
-<h1>Night City Atlas — 2045</h1>
 
-<img src="../maps/nc_citinet_map.svg"
-     alt="Carte de Night City en 2045"
-     width="600">
-    
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NC CitiNet — Night City Atlas</title>
+
+    <!-- Apparence de Leaflet -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Notre propre CSS -->
+    <style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #22232c;
+    }
+
+    h1 {
+        margin: 0;
+        padding: 12px;
+        color: white;
+    }
+
+    #map {
+        flex: 1;
+        min-height: 0;
+        background-color: #22232c;
+    }
+</style>
+</head>
+
+<body>
+    <h1>Night City Atlas — 2045</h1>
+
+    <button id="resetView">Reset View</button>
+    <!-- Emplacement de notre carte -->
+    <div id="map"></div>
+
+    <!-- Chargement de Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Notre propre JavaScript -->
+    <script>
+        // Créer la carte
+        const map = L.map("map", {
+            crs: L.CRS.Simple,
+            minZoom: -3,
+            maxZoom: 7,
+            zoomSnap: 0.1
+        });
+
+        // Définir les dimensions du SVG
+        const bounds = [
+            [0, 0],
+            [1225, 842.1756]
+        ];
+
+        // Afficher notre SVG
+        L.imageOverlay(
+            "../maps/nc_citinet_map.svg",
+            bounds
+        ).addTo(map);
+
+        // Centrer la vue sur Night City
+        map.fitBounds(bounds);
+        document.getElementById("resetView").addEventListener("click", function() {
+    map.fitBounds(bounds);
+});
+    </script>
+</body>
+
+</html>
