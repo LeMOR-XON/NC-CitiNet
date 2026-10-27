@@ -11,33 +11,45 @@
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <!-- Notre propre CSS -->
-    <style>
-    body {
-        margin: 0;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        background-color: #22232c;
-    }
-
-    h1 {
-        margin: 0;
-        padding: 12px;
-        color: white;
-    }
-
-    #map {
-        flex: 1;
-        min-height: 0;
-        background-color: #22232c;
-    }
-</style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <h1>Night City Atlas — 2045</h1>
 
-    <button id="resetView">Reset View</button>
+
+<div class="atlas-panel">
+
+    <h1>Night City Atlas — 2045</h1>
+
+    <button id="resetView">Vue d'ensemble</button>
+
+
+<label for="rechercheStation">Rechercher une station</label>
+
+<select id="rechercheStation">
+    <option value="">Choisir une station NCART…</option>
+</select>
+
+<label for="rechercheDistrict">Rechercher un district</label>
+
+<select id="rechercheDistrict">
+    <option value="">Choisir un district…</option>
+</select>
+
+    <label>
+        <input type="checkbox" id="toggleStations" checked>
+        Stations NCART
+    </label>
+
+    <label>
+        <input type="checkbox" id="toggleDistricts" checked>
+        Districts
+    </label>
+
+</div>
+
+
     <!-- Emplacement de notre carte -->
     <div id="map"></div>
 
@@ -45,146 +57,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Notre propre JavaScript -->
-    <script>
-        // Créer la carte
-        const map = L.map("map", {
-            crs: L.CRS.Simple,
-            minZoom: -3,
-            maxZoom: 7,
-            zoomSnap: 0.1,
-            wheelPxPerZoomLevel: 120
-        });
-
-        // Définir les dimensions du SVG
-        const bounds = [
-            [0, 0],
-            [1225, 842.1756]
-        ];
-
-        // Afficher notre SVG
-        L.imageOverlay(
-            "../maps/nc_citinet_map.svg",
-            bounds
-        ).addTo(map);
-
-        // Centrer la vue sur Night City
-        map.fitBounds(bounds);
-        map.setMaxBounds(
-    L.latLngBounds(bounds).pad(0.2)
-);
-        document.getElementById("resetView").addEventListener("click", function() {
-    map.fitBounds(bounds);
-});
-map.on("click", function(event) {
-    const y = event.latlng.lat;
-    const x = event.latlng.lng;
-
-    L.popup()
-        .setLatLng(event.latlng)
-        .setContent(
-            "X : " + x.toFixed(2) +
-            " | Y : " + y.toFixed(2)
-        )
-        .openOn(map);
-});
-
-
-
-
-
-async function chargerStations() {
-
-    // Lire notre SVG
-    const reponse = await fetch("../maps/nc_citinet_map.svg");
-    const texteSVG = await reponse.text();
-
-    const documentSVG = new DOMParser()
-        .parseFromString(texteSVG, "image/svg+xml");
-
-    // Retrouver le calque STATIONS
-    const conteneurStations = documentSVG.querySelector(
-        '[id="_2_-_STATIONS"]'
-    );
-
-    // Récupérer les cercles ET les groupes
-    const stations = conteneurStations.querySelectorAll(
-        ":scope > circle, :scope > g"
-    );
-
-    // Créer une copie invisible pour mesurer les groupes
-    const svgMesure = document.importNode(
-        documentSVG.documentElement,
-        true
-    );
-
-    svgMesure.style.position = "absolute";
-    svgMesure.style.left = "-10000px";
-    svgMesure.style.visibility = "hidden";
-
-    document.body.appendChild(svgMesure);
-
-    let compteur = 0;
-
-    // Parcourir toutes les stations
-    for (const station of stations) {
-
-        const nom = station.getAttribute("data-name");
-
-        let x;
-        let ySVG;
-
-        if (station.tagName === "circle") {
-
-            // Cas d'une station simple
-            x = Number(station.getAttribute("cx"));
-            ySVG = Number(station.getAttribute("cy"));
-
-        } else {
-
-            // Cas d'une station composée
-            const copie = svgMesure.querySelector(
-                '[id="' + station.id + '"]'
-            );
-
-            const boite = copie.getBBox();
-
-            x = boite.x + boite.width / 2;
-            ySVG = boite.y + boite.height / 2;
-        }
-
-        // Convertir les coordonnées
-        const y = 1225 - ySVG;
-
-        // Créer le marqueur et sa fiche
-
-L.circleMarker([y, x], {
-    radius: 10,
-    stroke: false,
-    fill: true,
-    fillOpacity: 0
-})
-
-    .addTo(map)
-    .bindPopup(
-        "<b>" + nom + "</b><p>Station NCART</p>"
-    );
-
-
-        compteur++;
-    }
-
-    // Supprimer la copie invisible
-    svgMesure.remove();
-
-    console.log("Stations NCART chargées :", compteur);
-}
-
-
-// Lancer le chargement automatique
-chargerStations();
-
-
-    </script>
+<!-- Notre propre JavaScript -->
+<script src="script.js"></script>
 </body>
 
 </html>
