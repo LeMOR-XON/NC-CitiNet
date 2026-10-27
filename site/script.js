@@ -1,40 +1,56 @@
-        // Créer la carte
-        const map = L.map("map", {
-            crs: L.CRS.Simple,
-            minZoom: -3,
-            maxZoom: 7,
-            zoomSnap: 0.1,
-            wheelPxPerZoomLevel: 120
-        });
 
+/* ========================================
+   NIGHT CITY ATLAS — 2045
+   Initialisation de la carte
+======================================== */
+
+// Créer la carte Leaflet
+const map = L.map("map", {
+    crs: L.CRS.Simple,
+    minZoom: -3,
+    maxZoom: 7,
+    zoomSnap: 0.1,
+    wheelPxPerZoomLevel: 120
+});
+
+// Définir les dimensions de notre SVG
+const bounds = [
+    [0, 0],
+    [1225, 842.1756]
+];
+
+// Créer les couches interactives
 const coucheStations = L.layerGroup().addTo(map);
-
 const coucheDistricts = L.layerGroup().addTo(map);
 
+// Mémoriser les districts pour la recherche
 const indexDistricts = new Map();
-
 let districtSelectionne = null;
 
-        // Définir les dimensions du SVG
-        const bounds = [
-            [0, 0],
-            [1225, 842.1756]
-        ];
+// Afficher le SVG maître
+L.imageOverlay(
+    "../maps/nc_citinet_map.svg",
+    bounds
+).addTo(map);
 
-        // Afficher notre SVG
-        L.imageOverlay(
-            "../maps/nc_citinet_map.svg",
-            bounds
-        ).addTo(map);
-
-        // Centrer la vue sur Night City
-        map.fitBounds(bounds);
-        map.setMaxBounds(
+// Définir la vue initiale et les limites de navigation
+map.fitBounds(bounds);
+map.setMaxBounds(
     L.latLngBounds(bounds).pad(0.2)
 );
-        document.getElementById("resetView").addEventListener("click", function() {
-    map.fitBounds(bounds);
-});
+
+
+/* ========================================
+   COMMANDES DE NAVIGATION
+======================================== */
+
+// Revenir à la vue d'ensemble
+document.getElementById("resetView")
+    .addEventListener("click", function() {
+        map.fitBounds(bounds);
+    });
+
+// Afficher les coordonnées au clic
 map.on("click", function(event) {
     const y = event.latlng.lat;
     const x = event.latlng.lng;
@@ -48,6 +64,10 @@ map.on("click", function(event) {
         .openOn(map);
 });
 
+
+/* ========================================
+   CHARGEMENT DES DONNÉES SVG
+======================================== */
 
 async function chargerDonneesCarte() {
 
@@ -63,27 +83,29 @@ async function chargerDonneesCarte() {
     const documentSVG = new DOMParser()
         .parseFromString(texteSVG, "image/svg+xml");
 
-    // Transmettre le SVG aux deux fonctions
+    // Charger les éléments interactifs
     chargerDistricts(documentSVG);
     chargerStations(documentSVG);
 }
 
 
-// ------------------------------------
-// DISTRICTS
-// ------------------------------------
+/* ========================================
+   DISTRICTS
+======================================== */
 
 function chargerDistricts(documentSVG) {
 
+    // Retrouver le calque DISTRICTS
     const conteneurDistricts = documentSVG.querySelector(
         '[id="_06_-_DISTRICTS"]'
     );
 
+    // Récupérer les formes des 24 districts
     const districts = conteneurDistricts.querySelectorAll(
         ":scope > polygon, :scope > path"
     );
 
-    // Créer la couche interactive
+    // Créer le SVG des zones interactives
     const svgDistricts = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "svg"
@@ -96,10 +118,13 @@ function chargerDistricts(documentSVG) {
 
     svgDistricts.style.pointerEvents = "none";
 
+    // Créer les zones interactives
     for (const district of districts) {
 
+        // Copier la forme depuis le SVG maître
         const forme = district.cloneNode(true);
 
+        // Définir l'apparence de la zone
         forme.style.fill = "#69cbd0";
         forme.style.fillOpacity = "0";
         forme.style.stroke = "none";
@@ -107,20 +132,23 @@ function chargerDistricts(documentSVG) {
 
         svgDistricts.appendChild(forme);
 
+        // Récupérer le nom du district
         const nom = district.getAttribute("data-name")
             || district.id;
 
-        // Survol
+        // Mettre en surbrillance au survol
         forme.addEventListener("mouseenter", function() {
             forme.style.fillOpacity = "0.25";
         });
 
-forme.addEventListener("mouseleave", function() {
-    forme.style.fillOpacity =
-        districtSelectionne === forme ? "0.25" : "0";
-});
+        // Retirer la surbrillance en quittant le district,
+        // sauf s'il est sélectionné dans la recherche
+        forme.addEventListener("mouseleave", function() {
+            forme.style.fillOpacity =
+                districtSelectionne === forme ? "0.25" : "0";
+        });
 
-        // Clic
+        // Afficher le nom au clic
         forme.addEventListener("click", function(event) {
             L.DomEvent.stopPropagation(event);
 
@@ -131,65 +159,72 @@ forme.addEventListener("mouseleave", function() {
         });
     }
 
-L.svgOverlay(svgDistricts, bounds, {
-    interactive: true
-}).addTo(coucheDistricts);
+    // Ajouter les districts à leur couche Leaflet
+    L.svgOverlay(svgDistricts, bounds, {
+        interactive: true
+    }).addTo(coucheDistricts);
 
+    // Préparer la recherche des districts
+    const listeDistricts = document.getElementById(
+        "rechercheDistrict"
+    );
 
-// Remplir la recherche des districts
-const listeDistricts = document.getElementById(
-    "rechercheDistrict"
-);
+    for (const forme of svgDistricts.children) {
 
-for (const forme of svgDistricts.children) {
+        const nom = forme.getAttribute("data-name")
+            || forme.id;
 
-    // Récupérer le nom du quartier
-    const nom = forme.getAttribute("data-name")
-        || forme.id;
+        // Mesurer le rectangle englobant du district
+        const boite = forme.getBBox();
 
-    // Mesurer le rectangle entourant le district
-    const boite = forme.getBBox();
+        // Convertir les limites SVG en coordonnées Leaflet
+        const limites = [
+            [1225 - (boite.y + boite.height), boite.x],
+            [1225 - boite.y, boite.x + boite.width]
+        ];
 
-    // Convertir ce rectangle en coordonnées Leaflet
-    const limites = [
-        [1225 - (boite.y + boite.height), boite.x],
-        [1225 - boite.y, boite.x + boite.width]
-    ];
+        // Enregistrer la forme et ses limites
+        indexDistricts.set(forme.id, {
+            forme: forme,
+            limites: limites
+        });
 
-    // Mémoriser la forme et ses limites
-    indexDistricts.set(forme.id, {
-        forme: forme,
-        limites: limites
-    });
+        // Ajouter le district à la liste déroulante
+        const option = document.createElement("option");
 
-    // Ajouter le district à la liste HTML
-    const option = document.createElement("option");
+        option.value = forme.id;
+        option.textContent = nom;
 
-    option.value = forme.id;
-    option.textContent = nom;
-
-    listeDistricts.appendChild(option);
-}
+        listeDistricts.appendChild(option);
+    }
 
     console.log("Districts chargés :", districts.length);
 }
 
 
-// ------------------------------------
-// STATIONS NCART
-// ------------------------------------
+/* ========================================
+   STATIONS NCART
+======================================== */
 
 function chargerStations(documentSVG) {
 
+    // Retrouver le calque STATIONS
     const conteneurStations = documentSVG.querySelector(
         '[id="_2_-_STATIONS"]'
     );
 
+    // Récupérer les cercles et les groupes
     const stations = conteneurStations.querySelectorAll(
         ":scope > circle, :scope > g"
     );
 
-    // Copie invisible pour mesurer les stations complexes
+    // Préparer la liste de recherche
+    const listeStations = document.getElementById(
+        "rechercheStation"
+    );
+
+    // Créer une copie invisible du SVG pour mesurer
+    // les stations constituées de plusieurs formes
     const svgMesure = document.importNode(
         documentSVG.documentElement,
         true
@@ -203,6 +238,7 @@ function chargerStations(documentSVG) {
 
     let compteur = 0;
 
+    // Parcourir toutes les stations
     for (const station of stations) {
 
         const nom = station.getAttribute("data-name");
@@ -212,13 +248,13 @@ function chargerStations(documentSVG) {
 
         if (station.tagName === "circle") {
 
-            // Station simple
+            // Station simple : lire le centre du cercle
             x = Number(station.getAttribute("cx"));
             ySVG = Number(station.getAttribute("cy"));
 
         } else {
 
-            // Station composée
+            // Station composée : calculer le centre du groupe
             const copie = svgMesure.querySelector(
                 '[id="' + station.id + '"]'
             );
@@ -229,19 +265,18 @@ function chargerStations(documentSVG) {
             ySVG = boite.y + boite.height / 2;
         }
 
-        // Conversion des coordonnées
+        // Convertir la coordonnée Y pour Leaflet
         const y = 1225 - ySVG;
 
-        // Ajouter la station à notre liste déroulante
+        // Ajouter la station à la liste déroulante
         const option = document.createElement("option");
 
         option.textContent = nom;
         option.value = y + "," + x;
 
-        document.getElementById("rechercheStation")
-            .appendChild(option);
+        listeStations.appendChild(option);
 
-        // Zone de clic invisible
+        // Créer une zone de clic invisible
         L.circleMarker([y, x], {
             radius: 10,
             stroke: false,
@@ -256,12 +291,18 @@ function chargerStations(documentSVG) {
         compteur++;
     }
 
-    // Retirer la copie de mesure
+    // Supprimer la copie de mesure
     svgMesure.remove();
 
     console.log("Stations NCART chargées :", compteur);
 }
 
+
+/* ========================================
+   GESTION DES COUCHES
+======================================== */
+
+// Activer ou désactiver les interactions NCART
 document.getElementById("toggleStations")
     .addEventListener("change", function(event) {
 
@@ -270,9 +311,9 @@ document.getElementById("toggleStations")
         } else {
             map.removeLayer(coucheStations);
         }
-
     });
 
+// Activer ou désactiver les interactions des districts
 document.getElementById("toggleDistricts")
     .addEventListener("change", function(event) {
 
@@ -281,9 +322,14 @@ document.getElementById("toggleDistricts")
         } else {
             map.removeLayer(coucheDistricts);
         }
-
     });
-    
+
+
+/* ========================================
+   RECHERCHE CARTOGRAPHIQUE
+======================================== */
+
+// Rechercher une station NCART
 document.getElementById("rechercheStation")
     .addEventListener("change", function(event) {
 
@@ -299,11 +345,11 @@ document.getElementById("rechercheStation")
         map.flyTo([y, x], 2);
     });
 
-
+// Rechercher un district
 document.getElementById("rechercheDistrict")
     .addEventListener("change", function(event) {
 
-        // Retirer l'ancienne sélection
+        // Retirer la surbrillance précédente
         if (districtSelectionne) {
             districtSelectionne.style.fillOpacity = "0";
         }
@@ -315,23 +361,24 @@ document.getElementById("rechercheDistrict")
             return;
         }
 
-        // Retrouver le district choisi
+        // Retrouver le district sélectionné
         const district = indexDistricts.get(id);
 
         districtSelectionne = district.forme;
 
-        // Mettre sa surface en surbrillance
+        // Mettre en surbrillance
         districtSelectionne.style.fillOpacity = "0.25";
 
-        // Déplacer la caméra vers le quartier
+        // Déplacer la caméra vers le district
         map.flyToBounds(district.limites, {
             padding: [40, 40],
             maxZoom: 3
         });
     });
 
-// ------------------------------------
-// DÉMARRAGE
-// ------------------------------------
+
+/* ========================================
+   DÉMARRAGE DE NC CITINET
+======================================== */
 
 chargerDonneesCarte();

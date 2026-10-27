@@ -6,59 +6,56 @@
     <meta charset="UTF-8">
     <title>NC CitiNet — Night City Atlas</title>
 
-    <!-- Apparence de Leaflet -->
+    <!-- Feuilles de style -->
     <link rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-    <!-- Notre propre CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <h1>Night City Atlas — 2045</h1>
 
+    <!-- Panneau de contrôle de l'Atlas -->
+    <div class="atlas-panel">
 
-<div class="atlas-panel">
+        <h1>Night City Atlas — 2045</h1>
 
-    <h1>Night City Atlas — 2045</h1>
+        <!-- Navigation -->
+        <button id="resetView">Vue d'ensemble</button>
 
-    <button id="resetView">Vue d'ensemble</button>
+        <!-- Recherche des stations -->
+        <label for="rechercheStation">Rechercher une station</label>
+        <select id="rechercheStation">
+            <option value="">Choisir une station NCART…</option>
+        </select>
 
+        <!-- Recherche des districts -->
+        <label for="rechercheDistrict">Rechercher un district</label>
+        <select id="rechercheDistrict">
+            <option value="">Choisir un district…</option>
+        </select>
 
-<label for="rechercheStation">Rechercher une station</label>
+        <!-- Gestion des couches -->
+        <label>
+            <input type="checkbox" id="toggleStations" checked>
+            Stations NCART
+        </label>
 
-<select id="rechercheStation">
-    <option value="">Choisir une station NCART…</option>
-</select>
+        <label>
+            <input type="checkbox" id="toggleDistricts" checked>
+            Districts
+        </label>
 
-<label for="rechercheDistrict">Rechercher un district</label>
+    </div>
 
-<select id="rechercheDistrict">
-    <option value="">Choisir un district…</option>
-</select>
-
-    <label>
-        <input type="checkbox" id="toggleStations" checked>
-        Stations NCART
-    </label>
-
-    <label>
-        <input type="checkbox" id="toggleDistricts" checked>
-        Districts
-    </label>
-
-</div>
-
-
-    <!-- Emplacement de notre carte -->
+    <!-- Carte interactive -->
     <div id="map"></div>
 
-    <!-- Chargement de Leaflet -->
+    <!-- Bibliothèque Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Notre propre JavaScript -->
-<!-- Notre propre JavaScript -->
-<script src="script.js"></script>
+    <!-- Fonctionnement de NC CitiNet -->
+    <script src="script.js"></script>
+
 </body>
 
 </html>
