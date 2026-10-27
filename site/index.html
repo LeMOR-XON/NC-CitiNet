@@ -51,7 +51,8 @@
             crs: L.CRS.Simple,
             minZoom: -3,
             maxZoom: 7,
-            zoomSnap: 0.1
+            zoomSnap: 0.1,
+            wheelPxPerZoomLevel: 120
         });
 
         // Définir les dimensions du SVG
@@ -68,9 +69,121 @@
 
         // Centrer la vue sur Night City
         map.fitBounds(bounds);
+        map.setMaxBounds(
+    L.latLngBounds(bounds).pad(0.2)
+);
         document.getElementById("resetView").addEventListener("click", function() {
     map.fitBounds(bounds);
 });
+map.on("click", function(event) {
+    const y = event.latlng.lat;
+    const x = event.latlng.lng;
+
+    L.popup()
+        .setLatLng(event.latlng)
+        .setContent(
+            "X : " + x.toFixed(2) +
+            " | Y : " + y.toFixed(2)
+        )
+        .openOn(map);
+});
+
+
+
+
+async function chargerStations() {
+
+    // Charger le fichier SVG
+    const reponse = await fetch("../maps/nc_citinet_map.svg");
+    const texteSVG = await reponse.text();
+
+    const documentSVG = new DOMParser()
+        .parseFromString(texteSVG, "image/svg+xml");
+
+
+    // Trouver les stations dessinées comme des cercles
+    const stations = documentSVG.querySelectorAll(
+        'circle[id^="_"]'
+    );
+
+    // Trouver les stations composées de plusieurs formes
+    const conteneurStations = documentSVG.querySelector(
+    '[id="_2_-_STATIONS"]'
+);
+
+const groupes = conteneurStations.querySelectorAll(
+    ':scope > g'
+);
+
+    // Afficher les stations complexes dans la console
+
+    // Créer une copie invisible du SVG pour mesurer les groupes
+    const svgMesure = document.importNode(
+        documentSVG.documentElement,
+        true
+    );
+
+    svgMesure.style.position = "absolute";
+    svgMesure.style.left = "-10000px";
+    svgMesure.style.visibility = "hidden";
+
+    document.body.appendChild(svgMesure);
+
+    // Placer les stations composées
+    for (const groupe of groupes) {
+
+        const station = svgMesure.querySelector(
+            '[id="' + groupe.id + '"]'
+        );
+
+        const boite = station.getBBox();
+
+        // Centre du groupe dans le SVG
+        const x = boite.x + boite.width / 2;
+        const ySVG = boite.y + boite.height / 2;
+
+        // Conversion vers Leaflet
+        const y = 1225 - ySVG;
+
+        const nom = groupe.getAttribute("data-name");
+
+        L.marker([y, x])
+            .addTo(map)
+            .bindPopup(nom + " — Station NCART");
+    }
+
+    // Supprimer la copie utilisée pour les mesures
+    svgMesure.remove();
+
+
+
+    // Parcourir les stations trouvées
+    for (const station of stations) {
+
+        // Vérifier que l'identifiant est celui d'une station
+        if (!/^_\d+_-_/.test(station.id)) {
+            continue;
+        }
+
+        // Récupérer son nom et ses coordonnées
+        const nom = station.getAttribute("data-name");
+        const x = Number(station.getAttribute("cx"));
+        const ySVG = Number(station.getAttribute("cy"));
+
+        // Convertir les coordonnées SVG vers Leaflet
+        const y = 1225 - ySVG;
+
+        // Ajouter un marqueur
+        L.marker([y, x])
+            .addTo(map)
+            .bindPopup("<b>" + nom + "</b><p>Station NCART</p>");
+    }
+}
+
+// Lancer le chargement automatique
+chargerStations();
+
+
     </script>
 </body>
 
