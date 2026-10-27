@@ -23,6 +23,8 @@ const bounds = [
 const coucheStations = L.layerGroup().addTo(map);
 const coucheDistricts = L.layerGroup().addTo(map);
 
+const coucheEtiquettesDistricts = L.layerGroup().addTo(map);
+
 let groupeStationsSVG = null;
 
 // Mémoriser les districts pour la recherche
@@ -101,6 +103,11 @@ async function chargerDonneesCarte() {
      '[id="_2_-_STATIONS"]'
  );
 
+// Récupérer le groupe des routes secondaires
+const groupeRoutesSecondaires = svgCarte.querySelector(
+    '[id="_04_-_ROUTES_SECONDAIRES"]'
+);
+
  // Afficher ou masquer les lignes de transport
  document.getElementById("toggleReseau")
      .addEventListener("change", function(event) {
@@ -109,6 +116,16 @@ async function chargerDonneesCarte() {
              event.target.checked ? "" : "none";
 
      });
+
+
+// Afficher ou masquer les routes secondaires
+document.getElementById("toggleRoutesSecondaires")
+    .addEventListener("change", function(event) {
+
+        groupeRoutesSecondaires.style.display =
+            event.target.checked ? "" : "none";
+
+    });
 
     // Charger les éléments interactifs
     chargerDistricts(documentSVG);
@@ -175,15 +192,33 @@ function chargerDistricts(documentSVG) {
                 districtSelectionne === forme ? "0.25" : "0";
         });
 
-        // Afficher le nom au clic
-        forme.addEventListener("click", function(event) {
-            L.DomEvent.stopPropagation(event);
 
-            L.popup()
-                .setLatLng(map.mouseEventToLatLng(event))
-                .setContent("<b>" + nom + "</b>")
-                .openOn(map);
-        });
+// Afficher le nom et les coordonnées au clic
+forme.addEventListener("click", function(event) {
+
+    L.DomEvent.stopPropagation(event);
+
+    // Récupérer les coordonnées du clic
+    const position = map.mouseEventToLatLng(event);
+
+    const x = position.lng;
+    const y = position.lat;
+
+// Préparer une ligne de coordonnées pour notre fichier de données
+console.log(
+    `${JSON.stringify(forme.id)}: { x: ${x.toFixed(2)}, y: ${y.toFixed(2)} },`
+);
+
+    // Afficher les informations
+    L.popup()
+        .setLatLng(position)
+        .setContent(
+            "<b>" + nom + "</b><br>" +
+            "X : " + x.toFixed(2) +
+            " | Y : " + y.toFixed(2)
+        )
+        .openOn(map);
+});
     }
 
     // Ajouter les districts à leur couche Leaflet
@@ -202,8 +237,32 @@ function chargerDistricts(documentSVG) {
             || forme.id;
 
         // Mesurer le rectangle englobant du district
-        const boite = forme.getBBox();
+        const boite = forme.getBBox();   
+        
+// Chercher une position personnalisée
+const positionManuelle = positionsEtiquettes[forme.id];
 
+// Utiliser la position manuelle si elle existe,
+// sinon conserver le centre automatique
+const centreX = positionManuelle
+    ? positionManuelle.x
+    : boite.x + boite.width / 2;
+
+const centreY = positionManuelle
+    ? positionManuelle.y
+    : 1225 - (boite.y + boite.height / 2);
+
+// Créer une étiquette permanente
+L.tooltip({
+    permanent: true,
+    direction: "center",
+    className: "etiquette-district",
+    interactive: false
+})
+    .setLatLng([centreY, centreX])
+    .setContent(nom)
+    .addTo(coucheEtiquettesDistricts);
+        
         // Convertir les limites SVG en coordonnées Leaflet
         const limites = [
             [1225 - (boite.y + boite.height), boite.x],
@@ -360,6 +419,34 @@ document.getElementById("toggleDistricts")
             map.removeLayer(coucheDistricts);
         }
     });
+
+    
+
+// Gérer la visibilité des noms selon le zoom
+function actualiserEtiquettesDistricts() {
+
+    const utilisateurAutorise = document.getElementById(
+        "toggleEtiquettesDistricts"
+    ).checked;
+
+    const zoomSuffisant = map.getZoom() >= 1.1;
+
+    if (utilisateurAutorise && zoomSuffisant) {
+        map.addLayer(coucheEtiquettesDistricts);
+    } else {
+        map.removeLayer(coucheEtiquettesDistricts);
+    }
+}
+
+// Réagir aux changements de la case à cocher
+document.getElementById("toggleEtiquettesDistricts")
+    .addEventListener("change", actualiserEtiquettesDistricts);
+
+// Réagir aux changements de zoom
+map.on("zoomend", actualiserEtiquettesDistricts);
+
+// Appliquer les règles dès le chargement
+actualiserEtiquettesDistricts();
 
 
 /* ========================================

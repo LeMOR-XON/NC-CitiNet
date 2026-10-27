@@ -45,9 +45,19 @@
             Districts
         </label>
 
+<label>
+    <input type="checkbox" id="toggleEtiquettesDistricts" checked>
+    Noms des districts
+</label>
+
         <label>
     <input type="checkbox" id="toggleReseau" checked>
     Lignes de transport
+</label>
+
+<label>
+    <input type="checkbox" id="toggleRoutesSecondaires" checked>
+    Routes secondaires
 </label>
 
     </div>
@@ -58,8 +68,11 @@
     <!-- Bibliothèque Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Fonctionnement de NC CitiNet -->
-    <script src="script.js"></script>
+<!-- Données cartographiques -->
+<script src="data/positions-etiquettes.js"></script>
+
+<!-- Fonctionnement de NC CitiNet -->
+<script src="script.js"></script>
 
 </body>
 

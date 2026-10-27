@@ -69,3 +69,22 @@ body {
 .atlas-panel label {
     cursor: pointer;
 }
+
+
+/* ========================================
+   ETIQUETTES DES DISTRICTS
+======================================== */
+
+.etiquette-district {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+
+    text-shadow: 0 1px 4px #000000;
+    pointer-events: none;
+}
