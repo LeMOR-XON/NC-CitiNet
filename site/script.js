@@ -16,7 +16,7 @@ const map = L.map("map", {
 // Définir les dimensions de notre SVG
 const bounds = [
     [0, 0],
-    [1225, 842.1756]
+    [1316.3565, 1639.1677]
 ];
 
 // Créer les couches interactives
@@ -70,7 +70,7 @@ map.on("click", function(event) {
 async function chargerDonneesCarte() {
 
     // Lire le SVG une seule fois
-    const reponse = await fetch("../maps/nc_citinet_map.svg");
+    const reponse = await fetch("../maps/nc_citinet_master.svg");
 
     if (!reponse.ok) {
         throw new Error("Impossible de charger le SVG");
