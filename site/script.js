@@ -128,7 +128,7 @@ async function chargerDonneesCarte() {
 
     // Charger les éléments interactifs
     chargerDistricts(documentSVG);
-    chargerStations(documentSVG);
+    chargerStations(svgCarte);
 }
 
 
@@ -278,76 +278,69 @@ function chargerDistricts(documentSVG) {
    STATIONS DE TRANSPORT
 ======================================== */
 
-function chargerStations(documentSVG) {
-    // Retrouver le calque STATIONS
-    const conteneurStations = documentSVG.querySelector(
+function chargerStations(svgCarte) {
+    // Les stations sont lues dans le SVG réellement affiché par Leaflet.
+    const conteneurStations = svgCarte.querySelector(
         '[id="_2_-_STATIONS"]'
     );
-
-    // Récupérer les cercles et les groupes
     const stations = conteneurStations.querySelectorAll(
         ":scope > circle, :scope > g"
     );
-
-    // Préparer la liste de recherche
     const listeStations = document.getElementById("rechercheStation");
-
-    // Créer une copie invisible du SVG pour mesurer
-    // les stations constituées de plusieurs formes
-    const svgMesure = document.importNode(
-        documentSVG.documentElement,
-        true
-    );
-
-    svgMesure.style.position = "absolute";
-    svgMesure.style.left = "-10000px";
-    svgMesure.style.visibility = "hidden";
-    document.body.appendChild(svgMesure);
+    const rectangleCarte = map.getContainer().getBoundingClientRect();
 
     let compteur = 0;
 
-    // Parcourir toutes les stations
     for (const station of stations) {
-        const nom = station.getAttribute("data-name");
-        let x;
+        const nom = station.getAttribute("data-name") || station.id;
+        let xSVG;
         let ySVG;
 
-        if (station.tagName === "circle") {
-            // Station simple : lire le centre du cercle
-            x = Number(station.getAttribute("cx"));
+        if (station.tagName.toLowerCase() === "circle") {
+            // Centre du symbole simple, dans le repère local de la station.
+            xSVG = Number(station.getAttribute("cx"));
             ySVG = Number(station.getAttribute("cy"));
         } else {
-            // Station composée : calculer le centre du groupe
-            const copie = svgMesure.querySelector(
-                '[id="' + station.id + '"]'
-            );
-
-            const boite = copie.getBBox();
-            x = boite.x + boite.width / 2;
+            // Centre du symbole composé, dans son repère local.
+            const boite = station.getBBox();
+            xSVG = boite.x + boite.width / 2;
             ySVG = boite.y + boite.height / 2;
         }
 
-        // Convertir la coordonnée Y pour Leaflet
-        const y = hauteurSVG - ySVG;
+        // Prendre en compte le viewBox et les éventuelles transformations SVG.
+        // getScreenCTM() transforme le centre du symbole en pixels du navigateur.
+        const pointSVG = svgCarte.createSVGPoint();
+        pointSVG.x = xSVG;
+        pointSVG.y = ySVG;
 
-        // Ajouter la station à la liste déroulante
+        const matrice = station.getScreenCTM();
+        if (!matrice) {
+            console.warn("Position SVG indisponible pour la station :", nom);
+            continue;
+        }
+
+        const pointEcran = pointSVG.matrixTransform(matrice);
+        const position = map.containerPointToLatLng([
+            pointEcran.x - rectangleCarte.left,
+            pointEcran.y - rectangleCarte.top
+        ]);
+
+        // Conserver le format utilisé par le menu de recherche.
         const option = document.createElement("option");
         option.textContent = nom;
-        option.value = y + "," + x;
+        option.value = position.lat + "," + position.lng;
         listeStations.appendChild(option);
 
-        // Choisir la couche interactive selon le réseau
+        // Conserver la répartition des réseaux existante.
         const coucheCible = compteur < 31
             ? coucheStations
             : coucheStationsTransport;
-
-        // Définir le type de station pour le popup
         const typeStation = compteur < 31
             ? "Station NCART"
             : "Station de transport";
 
-        // Créer une zone de clic invisible
-        L.circleMarker([y, x], {
+        // Placer le marqueur sur le cercle graphique réellement visible.
+        L.circleMarker(position, {
             radius: 10,
             stroke: false,
             fill: true,
@@ -361,9 +354,7 @@ function chargerStations(documentSVG) {
         compteur++;
     }
 
-    // Supprimer la copie de mesure
-    svgMesure.remove();
-    console.log("Stations NCART chargées :", compteur);
+    console.log("Stations de transport chargées :", compteur);
 }
 
 
