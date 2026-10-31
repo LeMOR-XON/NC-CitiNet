@@ -16,16 +16,23 @@ const map = L.map("map", {
 // Définir les dimensions de notre SVG
 const bounds = [
     [0, 0],
-    [1316.3565, 1639.1677]
+    [1639.1677, 1316.3565]
 ];
 
 // Créer les couches interactives
 const coucheStations = L.layerGroup().addTo(map);
 const coucheDistricts = L.layerGroup().addTo(map);
-
+const coucheStationsTransport = L.layerGroup().addTo(map);
 const coucheEtiquettesDistricts = L.layerGroup().addTo(map);
 
 let groupeStationsSVG = null;
+let lignesNCARTSVG = [];
+let lignesTransportSVG = [];
+let stationsNCARTSVG = [];
+let stationsTransportSVG = [];
+
+
+let groupeDistrictsSVG = null;
 
 // Mémoriser les districts pour la recherche
 const indexDistricts = new Map();
@@ -93,30 +100,68 @@ async function chargerDonneesCarte() {
      interactive: false
  }).addTo(map);
 
- // Récupérer le groupe des lignes ferroviaires
- const groupeLignes = svgCarte.querySelector(
-     '[id="_1_-_NCART"]'
- );
+// Les quatre lignes du réseau NCART
+lignesNCARTSVG = [
+    "NCART_Blue_Line",
+    "NCART_Green_Line",
+    "NCART_Orange_Line",
+    "NCART_Red_Line"
+].map(id => svgCarte.querySelector('[id="' + id + '"]'));
+
+// Les autres transports ferroviaires
+lignesTransportSVG = [
+    "Executive_Monorail",
+    "Cargo_Rail_Line"
+].map(id => svgCarte.querySelector('[id="' + id + '"]'));
 
  // Récupérer le groupe graphique des stations
  groupeStationsSVG = svgCarte.querySelector(
      '[id="_2_-_STATIONS"]'
  );
 
+// Répartir les symboles selon leur réseau
+const symbolesStations = Array.from(groupeStationsSVG.children);
+
+stationsNCARTSVG = symbolesStations.slice(0, 31);
+stationsTransportSVG = symbolesStations.slice(31, 50);
+
+ // Récupérer le groupe graphique des districts
+groupeDistrictsSVG = svgCarte.querySelector(
+    '[id="_06_-_DISTRICTS"]'
+);
+
 // Récupérer le groupe des routes secondaires
 const groupeRoutesSecondaires = svgCarte.querySelector(
     '[id="_04_-_ROUTES_SECONDAIRES"]'
 );
 
- // Afficher ou masquer les lignes de transport
- document.getElementById("toggleReseau")
-     .addEventListener("change", function(event) {
 
-         groupeLignes.style.display =
-             event.target.checked ? "" : "none";
+ // Afficher ou masquer les autres lignes de transport
+document.getElementById("toggleReseau")
+    .addEventListener("change", function(event) {
 
-     });
+        const visible = event.target.checked;
 
+        // Contrôler les lignes ferroviaires et Executive
+        for (const ligne of lignesTransportSVG) {
+            if (ligne) {
+                ligne.style.display = visible ? "" : "none";
+            }
+        }
+
+        // Contrôler leurs symboles de stations
+        for (const station of stationsTransportSVG) {
+            station.style.display = visible ? "" : "none";
+        }
+
+        // Contrôler leurs zones cliquables
+        if (visible) {
+            map.addLayer(coucheStationsTransport);
+        } else {
+            map.removeLayer(coucheStationsTransport);
+        }
+
+    });
 
 // Afficher ou masquer les routes secondaires
 document.getElementById("toggleRoutesSecondaires")
@@ -250,7 +295,7 @@ const centreX = positionManuelle
 
 const centreY = positionManuelle
     ? positionManuelle.y
-    : 1225 - (boite.y + boite.height / 2);
+    : 1639.1677 - (boite.y + boite.height / 2);
 
 // Créer une étiquette permanente
 L.tooltip({
@@ -265,8 +310,8 @@ L.tooltip({
         
         // Convertir les limites SVG en coordonnées Leaflet
         const limites = [
-            [1225 - (boite.y + boite.height), boite.x],
-            [1225 - boite.y, boite.x + boite.width]
+            [1639.1677 - (boite.y + boite.height), boite.x],
+            [1639.1677 - boite.y, boite.x + boite.width]
         ];
 
         // Enregistrer la forme et ses limites
@@ -352,7 +397,7 @@ function chargerStations(documentSVG) {
         }
 
         // Convertir la coordonnée Y pour Leaflet
-        const y = 1225 - ySVG;
+        const y = 1639.1677 - ySVG;
 
         // Ajouter la station à la liste déroulante
         const option = document.createElement("option");
@@ -362,6 +407,11 @@ function chargerStations(documentSVG) {
 
         listeStations.appendChild(option);
 
+// Choisir la couche selon le numéro de station
+const coucheCible = compteur < 31
+    ? coucheStations
+    : coucheStationsTransport;
+
         // Créer une zone de clic invisible
         L.circleMarker([y, x], {
             radius: 10,
@@ -369,7 +419,7 @@ function chargerStations(documentSVG) {
             fill: true,
             fillOpacity: 0
         })
-            .addTo(coucheStations)
+            .addTo(coucheCible)
             .bindPopup(
                 "<b>" + nom + "</b><p>Station NCART</p>"
             );
@@ -388,39 +438,54 @@ function chargerStations(documentSVG) {
    GESTION DES COUCHES
 ======================================== */
 
- // Afficher ou masquer les stations NCART
- document.getElementById("toggleStations")
-     .addEventListener("change", function(event) {
+// Afficher ou masquer les stations et lignes NCART
+document.getElementById("toggleStations")
+    .addEventListener("change", function(event) {
 
-         const visible = event.target.checked;
+        const visible = event.target.checked;
 
-         // Contrôler l'affichage graphique
-         if (groupeStationsSVG) {
-             groupeStationsSVG.style.display =
-                 visible ? "" : "none";
-         }
+        // Contrôler les symboles des stations NCART
+        for (const station of stationsNCARTSVG) {
+            station.style.display = visible ? "" : "none";
+        }
 
-         // Contrôler les interactions
-         if (visible) {
-             map.addLayer(coucheStations);
-         } else {
-             map.removeLayer(coucheStations);
-         }
+        // Contrôler les quatre lignes NCART
+        for (const ligne of lignesNCARTSVG) {
+            if (ligne) {
+                ligne.style.display = visible ? "" : "none";
+            }
+        }
 
-     });
+        // Contrôler les zones cliquables
+        if (visible) {
+            map.addLayer(coucheStations);
+        } else {
+            map.removeLayer(coucheStations);
+        }
 
-// Activer ou désactiver les interactions des districts
+    });
+
+
+// Afficher ou masquer les zones des districts
 document.getElementById("toggleDistricts")
     .addEventListener("change", function(event) {
 
-        if (event.target.checked) {
+        const visible = event.target.checked;
+
+        // Contrôler les formes graphiques du master
+        if (groupeDistrictsSVG) {
+            groupeDistrictsSVG.style.display =
+                visible ? "" : "none";
+        }
+
+        // Contrôler les zones interactives
+        if (visible) {
             map.addLayer(coucheDistricts);
         } else {
             map.removeLayer(coucheDistricts);
         }
-    });
 
-    
+    });
 
 // Gérer la visibilité des noms selon le zoom
 function actualiserEtiquettesDistricts() {
