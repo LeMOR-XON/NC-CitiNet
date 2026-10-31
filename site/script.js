@@ -38,6 +38,42 @@ let lignesTransportSVG = [];
 let stationsNCARTSVG = [];
 let stationsTransportSVG = [];
 
+// Identifiants des 31 stations NCART
+// Indépendants de l'ordre des éléments dans le SVG
+const idsStationsNCART = new Set([
+    "_1_-_Muren_Street",
+    "_2_-_Ackerman_Avenue",
+    "_3_-_Eisenhower_Street",
+    "_4_-_H10_Station",
+    "_5_-_Francis_Drake_Avenue",
+    "_6_-_Ferris_Boulevard",
+    "_7_-_Stadium_Station",
+    "_8_-_Pigeon_Boulevard",
+    "_9_-_Kue_Street",
+    "_10_-_Heywood_Docks_Station",
+    "_11_-_Industrial_Zone_Station",
+    "_12_-_Kenson_Street",
+    "_13_-_Raymon_Street",
+    "_14_-_Charter_Hill_Station",
+    "_15_-_Woodland_Ave",
+    "_16_-_Pheasant_Street",
+    "_17_-_2nd_Street",
+    "_18_-_Smith_Street",
+    "_19_-_Fisk_Street",
+    "_20_-_Gold_Beach_Street",
+    "_21_-_NCU_Station",
+    "_22_-_Lake_Park_Station",
+    "_23_-_King_Street",
+    "_24_-_Harlem_Street",
+    "_25_-_City_Hall_Station",
+    "_26_-_Spivey_Street",
+    "_27_-_Port_Station",
+    "_28_-_Pacific_Boulevard_Station",
+    "_29_-_McBride_Street",
+    "_30_-_Kovaleski_Street",
+    "_31_-_Playland_by_the_Sea_Station"
+]);
+
 // Mémoriser les districts pour la recherche
 const indexDistricts = new Map();
 let districtSelectionne = null;
@@ -120,11 +156,77 @@ async function chargerDonneesCarte() {
         '[id="_04_-_ROUTES_SECONDAIRES"]'
     );
 
-    // Répartir les symboles selon leur ordre actuel dans le master
-    // Attention : cette répartition devra être remplacée par des identifiants stables.
-    const symbolesStations = Array.from(groupeStationsSVG.children);
-    stationsNCARTSVG = symbolesStations.slice(0, 31);
-    stationsTransportSVG = symbolesStations.slice(31, 50);
+    // Récupérer les symboles des stations
+const symbolesStations = Array.from(groupeStationsSVG.children);
+
+// Identifier les stations NCART par leur identifiant SVG
+stationsNCARTSVG = symbolesStations.filter(station =>
+    idsStationsNCART.has(station.id)
+);
+
+// Les autres stations appartiennent aux autres transports
+stationsTransportSVG = symbolesStations.filter(station =>
+    !idsStationsNCART.has(station.id)
+);
+
+// Vérifier le nombre de stations identifiées
+console.log(
+    "Stations NCART :", stationsNCARTSVG.length,
+    "| Autres transports :", stationsTransportSVG.length
+);
+
+// Identifiants attendus des 19 autres stations
+const idsStationsTransport = [
+    "_32_-_Port_of_Night_City_Yard",
+    "_33_-_Heywood_Docks_Rail_Yard",
+    "_34_-_Union_Railroad_Station",
+    "_35_-_Pol-Bud_Cement_Factory",
+    "_36_-_Militech_Ballistics_Range",
+    "_37_-_Petrochem_SovOil_Oil_Refineries",
+    "_38_-_Executive_Zone_Station",
+    "_39_-_Charter_Hill_Station",
+    "_40_-_Ziggurat_Station",
+    "_41_-_N54_Station",
+    "_42_-_Petrochem_SovOil_Station",
+    "_43_-_Trauma_Team_Station",
+    "_44_-_Danger_Gal_Station",
+    "_45_-_Continental_Brands_Station",
+    "_46_-_Biotechnica_Station",
+    "_47_-_MAnF_Station",
+    "_48_-_Sanroo_Station",
+    "_49_-_Dynalar_Station",
+    "_50_-_Rocklin_Augmentics_Station"
+];
+
+// Comparer les identifiants attendus avec le SVG chargé
+const idsAttendus = new Set([
+    ...idsStationsNCART,
+    ...idsStationsTransport
+]);
+
+const idsTrouves = new Set(
+    symbolesStations.map(station => station.id)
+);
+
+const idsManquants = [...idsAttendus].filter(
+    id => !idsTrouves.has(id)
+);
+
+const idsInconnus = [...idsTrouves].filter(
+    id => !idsAttendus.has(id)
+);
+
+if (idsManquants.length || idsInconnus.length ||
+    idsTrouves.size !== symbolesStations.length) {
+    console.warn("Identifiants des stations à vérifier :", {
+        idsManquants,
+        idsInconnus,
+        nombreSymboles: symbolesStations.length,
+        nombreIdsUniques: idsTrouves.size
+    });
+} else {
+    console.log("Identifiants SVG : 50 stations reconnues");
+}
 
     // Charger les éléments interactifs
     chargerDistricts(documentSVG);
@@ -331,13 +433,18 @@ function chargerStations(svgCarte) {
         option.value = position.lat + "," + position.lng;
         listeStations.appendChild(option);
 
-        // Conserver la répartition des réseaux existante.
-        const coucheCible = compteur < 31
-            ? coucheStations
-            : coucheStationsTransport;
-        const typeStation = compteur < 31
-            ? "Station NCART"
-            : "Station de transport";
+        // Identifier le réseau grâce à l'identifiant SVG
+const estNCART = idsStationsNCART.has(station.id);
+
+// Choisir la couche interactive correspondante
+const coucheCible = estNCART
+    ? coucheStations
+    : coucheStationsTransport;
+
+// Définir le type affiché dans la popup
+const typeStation = estNCART
+    ? "Station NCART"
+    : "Station de transport";
 
         // Placer le marqueur sur le cercle graphique réellement visible.
         L.circleMarker(position, {
