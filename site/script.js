@@ -13,8 +13,8 @@ const map = L.map("map", {
 });
 
 // Dimensions du SVG maître
-const largeurSVG = 1316.3565;
-const hauteurSVG = 1639.1677;
+const largeurSVG = 924.0057;
+const hauteurSVG = 1225.0644;
 
 // Limites de la carte Leaflet
 const bounds = [
