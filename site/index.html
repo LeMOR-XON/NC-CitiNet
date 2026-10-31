@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -7,16 +6,13 @@
     <title>NC CitiNet — Night City Atlas</title>
 
     <!-- Feuilles de style -->
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
     <!-- Panneau de contrôle de l'Atlas -->
     <div class="atlas-panel">
-
         <h1>Night City Atlas — 2045</h1>
 
         <!-- Navigation -->
@@ -25,7 +21,7 @@
         <!-- Recherche des stations -->
         <label for="rechercheStation">Rechercher une station</label>
         <select id="rechercheStation">
-            <option value="">Choisir une station NCART…</option>
+            <option value="">Choisir une station…</option>
         </select>
 
         <!-- Recherche des districts -->
@@ -42,24 +38,23 @@
 
         <label>
             <input type="checkbox" id="toggleDistricts" checked>
-            Districts
+            Zones des districts
         </label>
 
-<label>
-    <input type="checkbox" id="toggleEtiquettesDistricts" checked>
-    Noms des districts
-</label>
+        <label>
+            <input type="checkbox" id="toggleEtiquettesDistricts" checked>
+            Noms des districts
+        </label>
 
         <label>
-    <input type="checkbox" id="toggleReseau" checked>
-    Lignes de transport
-</label>
+            <input type="checkbox" id="toggleReseau" checked>
+            Lignes de transport
+        </label>
 
-<label>
-    <input type="checkbox" id="toggleRoutesSecondaires" checked>
-    Routes secondaires
-</label>
-
+        <label>
+            <input type="checkbox" id="toggleRoutesSecondaires" checked>
+            Routes secondaires
+        </label>
     </div>
 
     <!-- Carte interactive -->
@@ -68,12 +63,11 @@
     <!-- Bibliothèque Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Données cartographiques -->
-<script src="data/positions-etiquettes.js"></script>
+    <!-- Données cartographiques -->
+    <script src="data/positions-etiquettes.js"></script>
 
-<!-- Fonctionnement de NC CitiNet -->
-<script src="script.js"></script>
-
+    <!-- Fonctionnement de NC CitiNet -->
+    <script src="script.js"></script>
 </body>
 
 </html>
